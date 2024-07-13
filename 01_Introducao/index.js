@@ -10,6 +10,33 @@ server.use(express.json());
 
 const cursos = ['NodeJS', 'TypeScript', 'JavaScript']
 
+// Middleware global
+    server.use((req, res, next) => {
+        console.log(`URL CHAMADA: ${req.url}`);
+
+        return next();
+    });
+
+    function checkCurso(req, res, next) {
+        if(!req.body.name) {
+            return res.status(400).json({ error: "Nome do curso é obrigatório"})
+        }
+        
+        return next();
+    }
+
+    function checkIndexCurso(req, res, next) {
+        const curso = cursos[req.params.index];
+        if(!curso) {
+            return res.status(400).json({ error: "O curso não existe"})
+        }
+
+        req.curso = curso;
+
+        return next();
+    }
+
+
 // localhost:3000/curso - Query
 // server.get('/curso', (req, res) => {
 //     const nome = req.query.nome
@@ -30,14 +57,12 @@ const cursos = ['NodeJS', 'TypeScript', 'JavaScript']
         return res.json(cursos)
     })
 
-    server.get('/cursos/:index', (req, res) => {
-        const {index} = req.params;
-
-        return res.json(cursos[index])
+    server.get('/cursos/:index', checkIndexCurso, (req, res) => {
+        return res.json(req.curso)
     })
 
     // Request body - criando um novo curso
-    server.post('/cursos', (req, res) => {
+    server.post('/cursos', checkCurso, (req, res) => {
         const { name } = req.body
         cursos.push(name)
 
@@ -45,7 +70,7 @@ const cursos = ['NodeJS', 'TypeScript', 'JavaScript']
     }) 
 
     // Requsição do tipo Put - Atualizando um curso
-    server.put('/cursos/:index', (req, res) => {
+    server.put('/cursos/:index', checkCurso, checkIndexCurso, (req, res) => {
         const { index } = req.params
         const { name } = req.body
 
@@ -55,7 +80,7 @@ const cursos = ['NodeJS', 'TypeScript', 'JavaScript']
     })
 
     // Excluindo algum curso
-    server.delete('/cursos/:index', (req, res) => {
+    server.delete('/cursos/:index', checkIndexCurso, (req, res) => {
         const { index } = req.params;
 
         cursos.splice(index, 1);
